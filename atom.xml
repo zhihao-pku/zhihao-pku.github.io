@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://zhihao-pku.github.io/"/>
-  <updated>2021-07-02T17:00:26.000Z</updated>
+  <updated>2021-07-02T17:05:17.000Z</updated>
   <id>https://zhihao-pku.github.io/</id>
   
   <author>
@@ -17,11 +17,11 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>DAG的9种基本结构</title>
-    <link href="https://zhihao-pku.github.io/2020/01/14/5w2h-godweiyang/"/>
-    <id>https://zhihao-pku.github.io/2020/01/14/5w2h-godweiyang/</id>
-    <published>2020-01-14T07:27:31.000Z</published>
-    <updated>2021-07-02T17:00:26.000Z</updated>
+    <title>多变量线性回归和Logistic回归中绘制一个自变量与Y或预测概率的回归线</title>
+    <link href="https://zhihao-pku.github.io/2021/07/02/5w2h-godweiyang/"/>
+    <id>https://zhihao-pku.github.io/2021/07/02/5w2h-godweiyang/</id>
+    <published>2021-07-02T07:27:31.000Z</published>
+    <updated>2021-07-02T17:05:17.000Z</updated>
     
     <summary type="html">
     
@@ -31,17 +31,18 @@
         
           &lt;blockquote&gt;
 &lt;p&gt;Welcome !!&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;&lt;img src=&quot;https://zhihao-pku.oss-cn-beijing.aliyuncs.com/20210112123110.png&quot;
+&lt;ul&gt;
+&lt;li&gt;多变量回归中有多个自变量，要绘制其中一个自变量与结局的关系时，要把其他自变量固定在某一个水平  &lt;/li&gt;
+&lt;li&gt;一般而言，连续变量固定在均值水平，分类变量固定在对照水平，也可以自行指定对照水平 
         
       
     
     </summary>
     
-      <category term="流行病学" scheme="https://zhihao-pku.github.io/categories/%E6%B5%81%E8%A1%8C%E7%97%85%E5%AD%A6/"/>
+      <category term="回归" scheme="https://zhihao-pku.github.io/categories/%E5%9B%9E%E5%BD%92/"/>
     
     
-      <category term="流行病学" scheme="https://zhihao-pku.github.io/tags/%E6%B5%81%E8%A1%8C%E7%97%85%E5%AD%A6/"/>
+      <category term="回归" scheme="https://zhihao-pku.github.io/tags/%E5%9B%9E%E5%BD%92/"/>
     
   </entry>
   
