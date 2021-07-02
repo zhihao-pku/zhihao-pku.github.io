@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Zhihao&#39;s Blog</title>
+  
+  <subtitle>Learning From Data</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://zhihao-pku.github.io/"/>
+  <updated>2021-07-02T14:30:57.000Z</updated>
+  <id>https://zhihao-pku.github.io/</id>
+  
+  <author>
+    <name>志浩</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>DAG的9种基本结构</title>
+    <link href="https://zhihao-pku.github.io/2020/01/14/5w2h-godweiyang/"/>
+    <id>https://zhihao-pku.github.io/2020/01/14/5w2h-godweiyang/</id>
+    <published>2020-01-14T07:27:31.000Z</published>
+    <updated>2021-07-02T14:30:57.000Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;blockquote&gt;
+&lt;p&gt;Welcome !&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&quot;https://zhihao-pku.oss-cn-beijing.aliyuncs.com/20210112123110.png&quot;
+        
+      
+    
+    </summary>
+    
+      <category term="流行病学" scheme="https://zhihao-pku.github.io/categories/%E6%B5%81%E8%A1%8C%E7%97%85%E5%AD%A6/"/>
+    
+    
+      <category term="流行病学" scheme="https://zhihao-pku.github.io/tags/%E6%B5%81%E8%A1%8C%E7%97%85%E5%AD%A6/"/>
+    
+  </entry>
+  
+</feed>
