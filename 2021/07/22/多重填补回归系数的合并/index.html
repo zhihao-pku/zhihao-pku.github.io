@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","Sidebar Display (only for Muse | Mist), available values":null,"display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"./public/search.xml"};
+  </script>
+
+  <meta name="description" content="多重填补是Rubin在1978年提出的一种缺失数据填补方法。基本思路是：  对于待分析的含缺失的数据独立填补M次生成M份完整数据 对这M份完整数据分别分析得出M个估计量 基于一定方法将这M个估计量合并生成最终的一个估计量">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多重填补回归系数的合并">
+<meta property="og:url" content="http://example.com/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/index.html">
+<meta property="og:site_name" content="Zhihao&#39;s Blog">
+<meta property="og:description" content="多重填补是Rubin在1978年提出的一种缺失数据填补方法。基本思路是：  对于待分析的含缺失的数据独立填补M次生成M份完整数据 对这M份完整数据分别分析得出M个估计量 基于一定方法将这M个估计量合并生成最终的一个估计量">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://zhihao-pku.oss-cn-beijing.aliyuncs.com/20210520153056.png">
+<meta property="og:image" content="https://zhihao-pku.oss-cn-beijing.aliyuncs.com/20210520153015.png">
+<meta property="article:published_time" content="2021-07-21T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-07-22T04:41:27.000Z">
+<meta property="article:author" content="Zhihao">
+<meta property="article:tag" content="回归">
+<meta property="article:tag" content="缺失值">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zhihao-pku.oss-cn-beijing.aliyuncs.com/20210520153056.png">
+
+<link rel="canonical" href="http://example.com/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>多重填补回归系数的合并 | Zhihao's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Zhihao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Zhihao's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">博观而约取，厚积而薄发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">2</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">1</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">2</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/zhihao.gif">
+      <meta itemprop="name" content="Zhihao">
+      <meta itemprop="description" content="北京大学 PhD">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Zhihao's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          多重填补回归系数的合并
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-07-22 00:00:00 / 修改时间：12:41:27" itemprop="dateCreated datePublished" datetime="2021-07-22T00:00:00+08:00">2021-07-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BB%9F%E8%AE%A1/" itemprop="url" rel="index"><span itemprop="name">统计</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/" class="post-meta-item leancloud_visitors" data-flag-title="多重填补回归系数的合并" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>多重填补是Rubin在1978年提出的一种缺失数据填补方法。基本思路是：</p>
+<ol type="1">
+<li>对于待分析的含缺失的数据独立填补M次生成M份完整数据</li>
+<li>对这M份完整数据分别分析得出M个估计量</li>
+<li>基于一定方法将这M个估计量合并生成最终的一个估计量</li>
+</ol>
+<span id="more"></span>
+<p>该方法得出的估计量相比使用单一值填补更为稳健（估计量为多次填补数据估计量的均值）；计算估计量标准误时可以把多次填补间的变异加以考虑（一般会导致更大的标准误）。这里介绍一下步骤3：如何由填补产生的M套回归模型的回归系数合并成最终的一套回归系数</p>
+<h2><span id="方法一使用mice包标准流程">方法一：使用mice包标准流程</span></h2>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">library(tidyverse)</span><br><span class="line">library(mice)</span><br><span class="line">rm(<span class="built_in">list</span> = ls())</span><br></pre></td></tr></table></figure>
+<p>示例数据为mice包的employee数据集</p>
+<ul>
+<li>IQ: candidate IQ score</li>
+<li>wbeing: candidate well-being score</li>
+<li>jobperf: candidate job performance score</li>
+</ul>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">data &lt;- employee</span><br><span class="line">head(data)</span><br><span class="line"><span class="comment">##   IQ wbeing jobperf</span></span><br><span class="line"><span class="comment">## 1 78     13      NA</span></span><br><span class="line"><span class="comment">## 2 84      9      NA</span></span><br><span class="line"><span class="comment">## 3 84     10      NA</span></span><br><span class="line"><span class="comment">## 4 85     10      NA</span></span><br><span class="line"><span class="comment">## 5 87     NA      NA</span></span><br><span class="line"><span class="comment">## 6 91      3      NA</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 三个变量缺失情况</span></span><br><span class="line">apply(data, <span class="number">2</span>, <span class="keyword">function</span>(x) <span class="built_in">sum</span>(<span class="built_in">is.na</span>(x)))</span><br><span class="line"><span class="comment">##      IQ  wbeing jobperf </span></span><br><span class="line"><span class="comment">##       0       3      10</span></span><br></pre></td></tr></table></figure>
+<p>填补3次，并计算合并后的估计值</p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">M &lt;- 3 <span class="comment"># 多重填补次数</span></span><br><span class="line">set.seed(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成3份填补后数据</span></span><br><span class="line">m &lt;- mice(data = data, m = M)</span><br><span class="line"><span class="comment">## </span></span><br><span class="line"><span class="comment">##  iter imp variable</span></span><br><span class="line"><span class="comment">##   1   1  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   1   2  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   1   3  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   2   1  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   2   2  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   2   3  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   3   1  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   3   2  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   3   3  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   4   1  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   4   2  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   4   3  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   5   1  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   5   2  wbeing  jobperf</span></span><br><span class="line"><span class="comment">##   5   3  wbeing  jobperf</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 计算3份填补数据的估计值</span></span><br><span class="line">fit &lt;- with(m, expr = lm(IQ ~ wbeing + jobperf))</span><br><span class="line"><span class="built_in">class</span>(fit) <span class="comment"># &quot;mira&quot;对象</span></span><br><span class="line"><span class="comment">## [1] &quot;mira&quot;   &quot;matrix&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 汇总3份填补数据的估计值</span></span><br><span class="line">summary(pool(fit), conf.int = <span class="built_in">T</span>, conf.level = <span class="number">0.95</span>)</span><br><span class="line"><span class="comment">##          term   estimate std.error statistic       df    p.value      2.5 %</span></span><br><span class="line"><span class="comment">## 1 (Intercept) 77.3473539 26.889694 2.8764684 3.557769 0.05195377  -1.116587</span></span><br><span class="line"><span class="comment">## 2      wbeing  0.8973998  1.104307 0.8126358 9.026164 0.43733475  -1.599614</span></span><br><span class="line"><span class="comment">## 3     jobperf  1.1997289  2.652258 0.4523425 1.870813 0.69802345 -11.001455</span></span><br><span class="line"><span class="comment">##       97.5 %</span></span><br><span class="line"><span class="comment">## 1 155.811295</span></span><br><span class="line"><span class="comment">## 2   3.394413</span></span><br><span class="line"><span class="comment">## 3  13.400912</span></span><br></pre></td></tr></table></figure>
+<h2><span id="方法二对每一份填补数据自己构建模型">方法二：对每一份填补数据自己构建模型</span></h2>
+<p>有时候对原始数据填补后，需要新生成一些变量才能构建模型，这时候方法一的标准流程可能不适用；比如填补完数据中缺失的身高和体重后，要新生成BMI参与后续建模。此时可以获取每一份填补后的数据，分别对其处理并建模，然后使用pool()函数将多个模型估计值合并生成最终估计值</p>
+<p>pool()函数说明中：第一个参数object可以是"mira"对象，也可以是一个列表；若为列表，则列表中每一个对象（回归模型）都应适用于coef()函数返回回归系数和vcov()函数返回回归系数协方差矩阵（mice3.0版本后会有其他要求） <img src="https://zhihao-pku.oss-cn-beijing.aliyuncs.com/20210520153056.png"></p>
+<p><img src="https://zhihao-pku.oss-cn-beijing.aliyuncs.com/20210520153015.png"> 可见结果与方法一相同</p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 获得每一份填补后的数据</span></span><br><span class="line">data1 &lt;- complete(m, <span class="number">1</span>)</span><br><span class="line">data2 &lt;- complete(m, <span class="number">2</span>)</span><br><span class="line">data3 &lt;- complete(m, <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 对每一份填补后的数据建模</span></span><br><span class="line">fit1 &lt;- lm(IQ ~ wbeing + jobperf, data = data1)</span><br><span class="line">fit2 &lt;- lm(IQ ~ wbeing + jobperf, data = data2)</span><br><span class="line">fit3 &lt;- lm(IQ ~ wbeing + jobperf, data = data3)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 合并3个模型</span></span><br><span class="line">summary(pool(<span class="built_in">list</span>(fit1, fit2, fit3)), conf.int = <span class="built_in">T</span>, conf.level = <span class="number">0.95</span>)</span><br><span class="line"><span class="comment">##          term   estimate std.error statistic       df    p.value      2.5 %</span></span><br><span class="line"><span class="comment">## 1 (Intercept) 77.3473539 26.889694 2.8764684 3.557769 0.05195377  -1.116587</span></span><br><span class="line"><span class="comment">## 2      wbeing  0.8973998  1.104307 0.8126358 9.026164 0.43733475  -1.599614</span></span><br><span class="line"><span class="comment">## 3     jobperf  1.1997289  2.652258 0.4523425 1.870813 0.69802345 -11.001455</span></span><br><span class="line"><span class="comment">##       97.5 %</span></span><br><span class="line"><span class="comment">## 1 155.811295</span></span><br><span class="line"><span class="comment">## 2   3.394413</span></span><br><span class="line"><span class="comment">## 3  13.400912</span></span><br></pre></td></tr></table></figure>
+<h2><span id="方法三手工计算合并后回归系数及其95-ci">方法三：手工计算合并后回归系数及其95% CI</span></h2>
+<p>合并思路：</p>
+<ul>
+<li>最终回归系数估计值为M个填补数据估计值的均值</li>
+<li>最终回归系数标准误计算需考虑填补内变异（回归系数估计值在M次填补中变异的平均）和填补间变异（回归系数估计值在M次填补间的变异）两部分</li>
+</ul>
+<h3><span id="计算步骤">计算步骤</span></h3>
+<ul>
+<li>步骤1-4参考【Rubin, D.B. (1987). Multiple Imputation for Nonresponse in Surveys. New York: John Wiley and Sons.】P76～</li>
+<li>步骤5参考【Barnard, J. and Rubin, D.B. (1999). Small sample degrees of freedom with multiple imputation. Biometrika, 86, 948-955.】</li>
+</ul>
+<p>1、计算M次填补回归系数估计值的均值；<span class="math inline">\(\hat Q_i\)</span>为第<span class="math inline">\(i\)</span>次填补回归系数估计值</p>
+<p><span class="math display">\[
+\overline Q_m = \sum_{i = 1}^{m}\hat Q_i / m
+\]</span> 2、计算M次填补回归系数协方差矩阵均值（矩阵对应元素平均），即填补内变异；<span class="math inline">\(U_i\)</span>为第<span class="math inline">\(i\)</span>次填补回归系数协方差矩阵,可以直接通过<code>vcov(fit)</code>获得，也可以通过<span class="math inline">\((X^T V^{-1} X)^{-1}\)</span>手工计算（<span class="math inline">\(X\)</span>为模型设计矩阵，<span class="math inline">\(V\)</span>为模型残差协方差矩阵） <span class="math display">\[
+\overline U_m = \sum_{i = 1}^{n}U_i / m
+\]</span></p>
+<p>3、计算每次填补<span class="math inline">\(\hat Q_i\)</span>相比于<span class="math inline">\(\overline Q_m\)</span>的变异，即填补间变异 <span class="math display">\[
+B_m = \sum_{i = 1}^{m}(\hat Q_i - \overline Q_m) \times (\hat Q_i - \overline Q_m)^T / (m - 1)
+\]</span></p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Q_set &lt;- <span class="literal">NULL</span></span><br><span class="line">U_set &lt;- <span class="built_in">list</span>()</span><br><span class="line"><span class="keyword">for</span> (i <span class="keyword">in</span> <span class="number">1</span>:M) &#123;</span><br><span class="line">  data_i &lt;- complete(m, i)</span><br><span class="line">  fit_i &lt;- lm(IQ ~ wbeing + jobperf, data = data_i)</span><br><span class="line">  V_i &lt;- sigma(fit_i)^<span class="number">2</span> * diag(nrow(data))</span><br><span class="line">  X_i &lt;- model.matrix(~ wbeing + jobperf, data = data_i)</span><br><span class="line">  U_i &lt;- solve(t(X_i) %*% solve(V_i) %*% X_i)</span><br><span class="line">  Q_set &lt;- bind_rows(Q_set, coefficients(fit_i))</span><br><span class="line">  U_set[[i]] &lt;- U_i</span><br><span class="line">&#125;</span><br><span class="line">Qm &lt;- matrix(apply(Q_set, <span class="number">2</span>, mean), ncol = <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">SUM_Um &lt;- 0</span><br><span class="line">SUM_Bm &lt;- 0</span><br><span class="line"><span class="keyword">for</span> (i <span class="keyword">in</span> <span class="number">1</span>:M) &#123;</span><br><span class="line">  SUM_Um &lt;- SUM_Um + U_set[[i]]</span><br><span class="line">  SUM_Bm &lt;- SUM_Bm + (matrix(unlist(Q_set[i, ]), ncol = <span class="number">1</span>) - Qm) %*%</span><br><span class="line">    t(matrix(unlist(Q_set[i, ]), ncol = <span class="number">1</span>) - Qm)</span><br><span class="line">&#125;</span><br><span class="line">Um &lt;- SUM_Um / M</span><br><span class="line">Bm &lt;- SUM_Bm / (M - <span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<p>4、总变异<span class="math inline">\(T_m\)</span>由填补内变异和填补间变异两部分组成 <span class="math display">\[
+T_m = \overline U_m + (1 + 1/m)\times B_m
+\]</span> 以上步骤便计算出了合并后回归系数估计值<span class="math inline">\(\overline Q_m\)</span>及其标准误<span class="math inline">\(\sqrt{diag(T_m)}\)</span></p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Tm &lt;- Um + (<span class="number">1</span> + <span class="number">1</span> / M) * Bm</span><br><span class="line"></span><br><span class="line"><span class="comment"># 估计值</span></span><br><span class="line">Qm</span><br><span class="line"><span class="comment">##            [,1]</span></span><br><span class="line"><span class="comment">## [1,] 77.3473539</span></span><br><span class="line"><span class="comment">## [2,]  0.8973998</span></span><br><span class="line"><span class="comment">## [3,]  1.1997289</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 标准误</span></span><br><span class="line">(se &lt;- <span class="built_in">sqrt</span>(diag(Tm)))</span><br><span class="line"><span class="comment">## (Intercept)      wbeing     jobperf </span></span><br><span class="line"><span class="comment">##   26.889694    1.104307    2.652258</span></span><br></pre></td></tr></table></figure>
+<p>5、计算回归系数自由度<br>
+这里不同于一般线性回归，有一个整体自由度，每个回归系数95% CI基于该相同自由度计算。由于每个变量缺失量不同，因而各回归系数有不同的自由度</p>
+<p>5.1、原始自由度 <span class="math display">\[
+v_m = (m - 1) / r_m^2
+\]</span> 其中<span class="math inline">\(r_m = (1 + 1/m) * diag(B_m / T_m)\)</span>；<span class="math inline">\(B_m / T_m\)</span>指矩阵对应元素相除</p>
+<p>5.2、校正后自由度 <span class="math display">\[
+\tilde v_m = v_{com} / (1/(\lambda(v_{com}) \times (1 - \hat r_m)) + v_{com}/v_m)
+\]</span> 其中<span class="math inline">\(\lambda(x) = (x + 1) / (x + 3)\)</span>；mice包回归系数95% CI及p值是基于校正后自由度计算的，目的是校正<strong>理论完整数据</strong>样本量的影响</p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 原始自由度vm</span></span><br><span class="line">rm &lt;- (<span class="number">1</span> + <span class="number">1</span> / M) * diag((Bm / Tm))</span><br><span class="line">vm &lt;- (M - <span class="number">1</span>) * rm^(-<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># vcom是理论完整数据自由度</span></span><br><span class="line"><span class="comment"># 即假设原始数据无缺失（size=20）的情况下，模型有3个回归系数（含截距）</span></span><br><span class="line"><span class="comment"># 对应自由度为20-3=17</span></span><br><span class="line">vcom &lt;- 17</span><br><span class="line">lamba &lt;- <span class="keyword">function</span>(x) &#123;</span><br><span class="line">  <span class="built_in">return</span>((x + <span class="number">1</span>) / (x + <span class="number">3</span>))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 校正后自由度df</span></span><br><span class="line">df &lt;- vcom  / (<span class="number">1</span> / (lamba(vcom) * (<span class="number">1</span> - rm)) + vcom / vm)</span><br></pre></td></tr></table></figure>
+<p>6、有了t分布自由度，便可计算合并后回归系数估计值假设检验的p值及其95%CI</p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># t统计量</span></span><br><span class="line">t &lt;- Qm / se</span><br><span class="line"></span><br><span class="line"><span class="comment"># p值</span></span><br><span class="line">p.value &lt;- (<span class="number">1</span> - pt(q = <span class="built_in">abs</span>(t), df = df)) * <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 95% CI</span></span><br><span class="line">lwr &lt;- Qm - qt(p = <span class="number">0.975</span>, df = df) * se</span><br><span class="line">upr &lt;- Qm + qt(p = <span class="number">0.975</span>, df = df) * se</span><br></pre></td></tr></table></figure>
+<p>将上述手工计算结果整理如下；对比上述mice包pool()函数输出结果，与手工计算结果一致</p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">data.frame(estimate = Qm, </span><br><span class="line">           std.error = se, </span><br><span class="line">           df = df, </span><br><span class="line">           t = t, </span><br><span class="line">           p.value = p.value, </span><br><span class="line">           lwr = lwr, </span><br><span class="line">           upr = upr)</span><br><span class="line"><span class="comment">##               estimate std.error       df         t    p.value        lwr        upr</span></span><br><span class="line"><span class="comment">## (Intercept) 77.3473539 26.889694 3.557769 2.8764684 0.05195377  -1.116587 155.811295</span></span><br><span class="line"><span class="comment">## wbeing       0.8973998  1.104307 9.026164 0.8126358 0.43733475  -1.599614   3.394413</span></span><br><span class="line"><span class="comment">## jobperf      1.1997289  2.652258 1.870813 0.4523425 0.69802345 -11.001455  13.400912</span></span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Zhihao
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://example.com/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/" title="多重填补回归系数的合并">http://example.com/2021/07/22/多重填补回归系数的合并/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%9B%9E%E5%BD%92/" rel="tag"># 回归</a>
+              <a href="/tags/%E7%BC%BA%E5%A4%B1%E5%80%BC/" rel="tag"># 缺失值</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2021/07/22/%E5%A4%9A%E5%85%83vs-%E5%8D%95%E5%8F%98%E9%87%8F%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB/" rel="next" title="多元vs.单变量回归系数间的关系">
+      多元vs.单变量回归系数间的关系 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">1.</span> <span class="nav-text">方法一：使用mice包标准流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">2.</span> <span class="nav-text">方法二：对每一份填补数据自己构建模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-number">3.</span> <span class="nav-text">方法三：手工计算合并后回归系数及其95% CI</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-number">3.1.</span> <span class="nav-text">计算步骤</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Zhihao"
+      src="/images/zhihao.gif">
+  <p class="site-author-name" itemprop="name">Zhihao</p>
+  <div class="site-description" itemprop="description">北京大学 PhD</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zhihao-pku" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zhihao-pku" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:zhihao@pku.edu.cn" title="E-Mail → mailto:zhihao@pku.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/cheng-zhi-hao-48" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;cheng-zhi-hao-48" rel="noopener" target="_blank">知乎</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zhihao</span>
+</div>
+
+        
+
+
+
+
+
+
+<script data-pjax>
+  (function() {
+    function leancloudSelector(url) {
+      url = encodeURI(url);
+      return document.getElementById(url).querySelector('.leancloud-visitors-count');
+    }
+
+    function addCount(Counter) {
+      var visitors = document.querySelector('.leancloud_visitors');
+      var url = decodeURI(visitors.id);
+      var title = visitors.dataset.flagTitle;
+
+      Counter('get', '/classes/Counter?where=' + encodeURIComponent(JSON.stringify({ url })))
+        .then(response => response.json())
+        .then(({ results }) => {
+          if (results.length > 0) {
+            var counter = results[0];
+            leancloudSelector(url).innerText = counter.time + 1;
+            Counter('put', '/classes/Counter/' + counter.objectId, { time: { '__op': 'Increment', 'amount': 1 } })
+              .catch(error => {
+                console.error('Failed to save visitor count', error);
+              });
+          } else {
+              leancloudSelector(url).innerText = 'Counter not initialized! More info at console err msg.';
+              console.error('ATTENTION! LeanCloud counter has security bug, see how to solve it here: https://github.com/theme-next/hexo-leancloud-counter-security. \n However, you can still use LeanCloud without security, by setting `security` option to `false`.');
+            
+          }
+        })
+        .catch(error => {
+          console.error('LeanCloud Counter Error', error);
+        });
+    }
+
+    function showTime(Counter) {
+      var visitors = document.querySelectorAll('.leancloud_visitors');
+      var entries = [...visitors].map(element => {
+        return decodeURI(element.id);
+      });
+
+      Counter('get', '/classes/Counter?where=' + encodeURIComponent(JSON.stringify({ url: { '$in': entries } })))
+        .then(response => response.json())
+        .then(({ results }) => {
+          for (let url of entries) {
+            let target = results.find(item => item.url === url);
+            leancloudSelector(url).innerText = target ? target.time : 0;
+          }
+        })
+        .catch(error => {
+          console.error('LeanCloud Counter Error', error);
+        });
+    }
+
+    let { app_id, app_key, server_url } = {"enable":true,"app_id":"lByycqhK8DvaPNIK6JkTTsJv-gzGzoHsz","app_key":"56zmT9Irqqp0UBl48qta6YEk","server_url":null,"security":true};
+    function fetchData(api_server) {
+      var Counter = (method, url, data) => {
+        return fetch(`${api_server}/1.1${url}`, {
+          method,
+          headers: {
+            'X-LC-Id'     : app_id,
+            'X-LC-Key'    : app_key,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+      };
+      if (CONFIG.page.isPost) {
+        if (CONFIG.hostname !== location.hostname) return;
+        addCount(Counter);
+      } else if (document.querySelectorAll('.post-title-link').length >= 1) {
+        showTime(Counter);
+      }
+    }
+
+    let api_server = app_id.slice(-9) !== '-MdYXbMMI' ? server_url : `https://${app_id.slice(0, 8).toLowerCase()}.api.lncldglobal.com`;
+
+    if (api_server) {
+      fetchData(api_server);
+    } else {
+      fetch('https://app-router.leancloud.cn/2/route?appId=' + app_id)
+        .then(response => response.json())
+        .then(({ api_server }) => {
+          fetchData('https://' + api_server);
+        });
+    }
+  })();
+</script>
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'lByycqhK8DvaPNIK6JkTTsJv-gzGzoHsz',
+      appKey     : '56zmT9Irqqp0UBl48qta6YEk',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

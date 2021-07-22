@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Zhihao&#39;s Blog</title>
+  <icon>http://example.com/icon.png</icon>
+  <subtitle>博观而约取，厚积而薄发</subtitle>
+  <link href="http://example.com/atom.xml" rel="self"/>
+  
+  <link href="http://example.com/"/>
+  <updated>2021-07-22T04:40:43.000Z</updated>
+  <id>http://example.com/</id>
+  
+  <author>
+    <name>Zhihao</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>多元vs.单变量回归系数间的关系</title>
+    <link href="http://example.com/2021/07/22/%E5%A4%9A%E5%85%83vs-%E5%8D%95%E5%8F%98%E9%87%8F%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB/"/>
+    <id>http://example.com/2021/07/22/%E5%A4%9A%E5%85%83vs-%E5%8D%95%E5%8F%98%E9%87%8F%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB/</id>
+    <published>2021-07-22T04:35:45.000Z</published>
+    <updated>2021-07-22T04:40:43.000Z</updated>
+    
+    
+    <summary type="html">&lt;p&gt;多元回归系数和粗回归系数间的数量关系&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="统计" scheme="http://example.com/categories/%E7%BB%9F%E8%AE%A1/"/>
+    
+    
+    <category term="回归" scheme="http://example.com/tags/%E5%9B%9E%E5%BD%92/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>多重填补回归系数的合并</title>
+    <link href="http://example.com/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/"/>
+    <id>http://example.com/2021/07/22/%E5%A4%9A%E9%87%8D%E5%A1%AB%E8%A1%A5%E5%9B%9E%E5%BD%92%E7%B3%BB%E6%95%B0%E7%9A%84%E5%90%88%E5%B9%B6/</id>
+    <published>2021-07-21T16:00:00.000Z</published>
+    <updated>2021-07-22T04:41:27.000Z</updated>
+    
+    
+    <summary type="html">&lt;p&gt;多重填补是Rubin在1978年提出的一种缺失数据填补方法。基本思路是：&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;对于待分析的含缺失的数据独立填补M次生成M份完整数据&lt;/li&gt;
+&lt;li&gt;对这M份完整数据分别分析得出M个估计量&lt;/li&gt;
+&lt;li&gt;基于一定方法将这M个估计量合并生成最终的一个估计量&lt;/li&gt;
+&lt;/ol&gt;</summary>
+    
+    
+    
+    <category term="统计" scheme="http://example.com/categories/%E7%BB%9F%E8%AE%A1/"/>
+    
+    
+    <category term="回归" scheme="http://example.com/tags/%E5%9B%9E%E5%BD%92/"/>
+    
+    <category term="缺失值" scheme="http://example.com/tags/%E7%BC%BA%E5%A4%B1%E5%80%BC/"/>
+    
+  </entry>
+  
+</feed>
